@@ -12,11 +12,14 @@ struct ContentView: View {
     @State private var iconImage: NSImage?
     @State private var targetSize: CGFloat = 512
     @State private var isHovering = false
+    @State private var customWidth: String = ""
+    @State private var customHeight: String = ""
+    @State private var isCustomSize = false
     
     let availableSizes: [CGFloat] = [16, 32, 64, 128, 256, 512, 1024]
     
     var body: some View {
-        HStack(alignment:.top, spacing: 50){
+        HStack(alignment:.top, spacing: 30){
             // 图片显示区域
             VStack(spacing: 20) {
                 if let image = iconImage {
@@ -52,23 +55,39 @@ struct ContentView: View {
             }
             
             // 操作区域
-            VStack(alignment:.leading, spacing: 20) {
+            VStack(alignment:.leading, spacing: 10) {
                 Text("目标尺寸:")
                 Picker("", selection: $targetSize) {
                     ForEach(availableSizes, id: \.self) { size in
                         Text("\(Int(size))x\(Int(size))")
                     }
+                    Text("自定义")
+                        .tag(CGFloat(-1))
                 }
                 .pickerStyle(.radioGroup)
+                .onChange(of: targetSize) { oldValue, newValue in
+                    isCustomSize = (newValue == -1)
+                }
+                
+                if isCustomSize {
+                    HStack {
+                        TextField("宽", text: $customWidth)
+                            .frame(width: 60)
+                        Text("x")
+                        TextField("高", text: $customHeight)
+                            .frame(width: 60)
+                    }
+                    .textFieldStyle(.roundedBorder)
+                }
                 
                 Button(action: exportImage) {
                     Label("导出图标", systemImage: "square.and.arrow.up")
-                        .frame(width: 120)
+                        .frame(width: 120, alignment: .center)
                 }
                 .disabled(iconImage == nil)
                 .buttonStyle(.borderedProminent)
-                .padding(.top, 20)
             }
+            .frame(width: 150, alignment: .leading)
         }
         .padding()
         .frame(width: 800, height: 500)
@@ -92,13 +111,34 @@ struct ContentView: View {
     private func exportImage() {
         guard let image = iconImage else { return }
         
+        let exportSize: CGFloat
+        if isCustomSize {
+            guard let width = Float(customWidth),
+                  let height = Float(customHeight),
+                  width > 0, height > 0 else {
+                // 如果输入无效，不执行导出
+                return
+            }
+            exportSize = CGFloat(width)
+        } else {
+            exportSize = targetSize
+        }
+        
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png]
-        panel.nameFieldStringValue = "icon_\(Int(targetSize))x\(Int(targetSize)).png"
+        let fileName = isCustomSize ? 
+            "icon_\(customWidth)x\(customHeight).png" : 
+            "icon_\(Int(exportSize))x\(Int(exportSize)).png"
+        panel.nameFieldStringValue = fileName
         
         panel.begin { response in
             if response == .OK, let url = panel.url {
-                let resizedImage = resizeImage(image, to: NSSize(width: targetSize, height: targetSize))
+                let size = isCustomSize ?
+                    NSSize(width: Double(customWidth) ?? exportSize,
+                          height: Double(customHeight) ?? exportSize) :
+                    NSSize(width: exportSize, height: exportSize)
+                
+                let resizedImage = resizeImage(image, to: size)
                 if let tiffData = resizedImage.tiffRepresentation,
                    let bitmapImage = NSBitmapImageRep(data: tiffData),
                    let pngData = bitmapImage.representation(using: .png, properties: [
