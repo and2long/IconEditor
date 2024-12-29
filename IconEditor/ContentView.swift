@@ -16,66 +16,62 @@ struct ContentView: View {
     let availableSizes: [CGFloat] = [16, 32, 64, 128, 256, 512, 1024]
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Icon Editor")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            if let image = iconImage {
-                VStack(spacing: 12) {
+        HStack(alignment:.top, spacing: 50){
+            // 图片显示区域
+            VStack(spacing: 20) {
+                if let image = iconImage {
                     Image(nsImage: image)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 256, height: 256)
-                    
-                    ZStack {
-                        Button(action: selectNewImage) {
-                            Label("更换图标", systemImage: "arrow.triangle.2.circlepath")
-                                .frame(width: 120)
-                        }
-                        .buttonStyle(.bordered)
+                    Button(action: selectNewImage) {
+                        Label("更换图标", systemImage: "arrow.triangle.2.circlepath")
+                            .frame(width: 120)
                     }
+                    .buttonStyle(.bordered)
                     .frame(height: 32)
-                    
-                    HStack {
-                        Text("目标尺寸:")
-                        Picker("Size", selection: $targetSize) {
-                            ForEach(availableSizes, id: \.self) { size in
-                                Text("\(Int(size))x\(Int(size))")
-                            }
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [5]))
+                            .frame(width: 256, height: 256)
+                            .foregroundColor(isHovering ? .blue : .gray)
+                        
+                        VStack {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(.largeTitle)
+                            Text("拖拽图标到这里")
+                                .padding(.top, 8)
                         }
-                        .frame(width: 150)
                     }
-                }
-            } else {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [5]))
-                        .frame(width: 256, height: 256)
-                        .foregroundColor(isHovering ? .blue : .gray)
-                    
-                    VStack {
-                        Image(systemName: "square.and.arrow.down")
-                            .font(.largeTitle)
-                        Text("拖拽图标到这里")
-                            .padding(.top, 8)
+                    .onDrop(of: [.fileURL], isTargeted: $isHovering) { providers in
+                        loadDroppedImage(providers: providers)
+                        return true
                     }
-                }
-                .onDrop(of: [.fileURL], isTargeted: $isHovering) { providers in
-                    loadDroppedImage(providers: providers)
-                    return true
                 }
             }
             
-            Button(action: exportImage) {
-                Label("导出图标", systemImage: "square.and.arrow.up")
-                    .frame(width: 120)
+            // 操作区域
+            VStack(alignment:.leading, spacing: 20) {
+                Text("目标尺寸:")
+                Picker("", selection: $targetSize) {
+                    ForEach(availableSizes, id: \.self) { size in
+                        Text("\(Int(size))x\(Int(size))")
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                
+                Button(action: exportImage) {
+                    Label("导出图标", systemImage: "square.and.arrow.up")
+                        .frame(width: 120)
+                }
+                .disabled(iconImage == nil)
+                .buttonStyle(.borderedProminent)
+                .padding(.top, 20)
             }
-            .disabled(iconImage == nil)
-            .buttonStyle(.borderedProminent)
         }
         .padding()
-        .frame(width: 400, height: 500)
+        .frame(width: 800, height: 500)
     }
     
     private func loadDroppedImage(providers: [NSItemProvider]) {
