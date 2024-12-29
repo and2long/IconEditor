@@ -22,10 +22,31 @@ struct ContentView: View {
                 .fontWeight(.bold)
             
             if let image = iconImage {
-                Image(nsImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 256, height: 256)
+                VStack(spacing: 12) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 256, height: 256)
+                    
+                    ZStack {
+                        Button(action: selectNewImage) {
+                            Label("更换图标", systemImage: "arrow.triangle.2.circlepath")
+                                .frame(width: 120)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .frame(height: 32)
+                    
+                    HStack {
+                        Text("目标尺寸:")
+                        Picker("Size", selection: $targetSize) {
+                            ForEach(availableSizes, id: \.self) { size in
+                                Text("\(Int(size))x\(Int(size))")
+                            }
+                        }
+                        .frame(width: 150)
+                    }
+                }
             } else {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
@@ -44,16 +65,6 @@ struct ContentView: View {
                     loadDroppedImage(providers: providers)
                     return true
                 }
-            }
-            
-            HStack {
-                Text("目标尺寸:")
-                Picker("Size", selection: $targetSize) {
-                    ForEach(availableSizes, id: \.self) { size in
-                        Text("\(Int(size))x\(Int(size))")
-                    }
-                }
-                .frame(width: 150)
             }
             
             Button(action: exportImage) {
@@ -140,6 +151,22 @@ struct ContentView: View {
         newImage.addRepresentation(bitmapRep)
         
         return newImage
+    }
+    
+    private func selectNewImage() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.png, .jpeg]
+        
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                if let newImage = NSImage(contentsOf: url) {
+                    self.iconImage = newImage
+                }
+            }
+        }
     }
 }
 
