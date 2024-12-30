@@ -2,12 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- 其他已有的配置 -->
-    <key>NSDocumentsFolderUsageDescription</key>
-    <string>We need access to save your modified images</string>
-    <key>NSDesktopFolderUsageDescription</key>
-    <string>We need access to save your modified images to the desktop if you choose</string>
-    <key>NSDownloadsFolderUsageDescription</key>
-    <string>We need access to save your modified images to the downloads folder if you choose</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>We need access to save your modified images</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>We need access to save your modified images to the desktop if you choose</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>We need access to save your modified images to the downloads folder if you choose</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
 </dict>
-</plist> 
+</plist>
