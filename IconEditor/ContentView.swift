@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var customWidth: String = ""
     @State private var customHeight: String = ""
     @State private var isCustomSize = false
+    @State private var autoRoundCorners = false
     
     let availableSizes: [CGFloat] = [16, 32, 64, 128, 256, 512, 1024]
     
@@ -80,6 +81,11 @@ struct ContentView: View {
                     .textFieldStyle(.roundedBorder)
                 }
                 
+                Toggle(isOn: $autoRoundCorners) {
+                    Text("自动圆角")
+                }
+                .help("将图标四角裁剪为圆角，半径为宽度的17.54%")
+                
                 Button(action: exportImage) {
                     Label("导出图标", systemImage: "square.and.arrow.up")
                         .frame(width: 120, alignment: .center)
@@ -139,7 +145,11 @@ struct ContentView: View {
                     NSSize(width: exportSize, height: exportSize)
                 
                 let resizedImage = resizeImage(image, to: size)
-                if let tiffData = resizedImage.tiffRepresentation,
+                let finalImage = autoRoundCorners ? 
+                    applyRoundCorners(resizedImage, radius: size.width * 0.1754) : 
+                    resizedImage
+                
+                if let tiffData = finalImage.tiffRepresentation,
                    let bitmapImage = NSBitmapImageRep(data: tiffData),
                    let pngData = bitmapImage.representation(using: .png, properties: [
                        .interlaced: false,
@@ -203,6 +213,50 @@ struct ContentView: View {
                 }
             }
         }
+    }
+    
+    private func applyRoundCorners(_ image: NSImage, radius: CGFloat) -> NSImage {
+        let size = image.size
+        
+        // 创建位图上下文
+        guard let bitmapRep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(size.width),
+            pixelsHigh: Int(size.height),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 32
+        ) else { return image }
+        
+        // 创建新的图像上下文
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+        
+        // 创建圆角路径
+        let bezierPath = NSBezierPath(roundedRect: NSRect(origin: .zero, size: size), 
+                                    xRadius: radius, 
+                                    yRadius: radius)
+        
+        // 设置裁剪区域
+        bezierPath.addClip()
+        
+        // 绘制原始图像
+        image.draw(in: NSRect(origin: .zero, size: size),
+                  from: NSRect(origin: .zero, size: image.size),
+                  operation: .copy,
+                  fraction: 1.0)
+        
+        NSGraphicsContext.restoreGraphicsState()
+        
+        // 创建新图像
+        let newImage = NSImage(size: size)
+        newImage.addRepresentation(bitmapRep)
+        
+        return newImage
     }
 }
 
